@@ -1,0 +1,12 @@
+---
+title: "p8105_hw3_ks3663"
+author: "Kee-Young Shin"
+date: "October 10, 2018"
+output: github_document
+---
+
+## Problem 1
+```{r}
+
+```
+
