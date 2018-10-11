@@ -8,5 +8,50 @@ output: github_document
 ## Problem 1
 ```{r}
 
+library(tidyverse)
+library(p8105.datasets)
+
+data("brfss_smart2010") 
+
+filtered_brfss = brfss_smart2010 %>%
+  janitor::clean_names() %>%
+  filter(topic == "Overall Health") 
+
+filtered_brfss
+
 ```
+
+
+## Problem 2
+```{r}
+
+data("instacart")
+
+cart_data = instacart
+
+cart_data
+dim(cart_data)
+```
+There are 
+```{r}
+
+distinct(instacart, aisle_id) 
+# There are 134 different aisles. 
+
+instacart %>%
+  group_by(aisle_id) %>% # group by aisle id
+  summarize(n = n()) %>% # take count of number of times ordered 
+  arrange(-n) # puts the aisle id in order from most ordered to least
+# Most items are ordered from aisle 83 and aisle 24. 
+
+```
+
+## Problem 3
+```{r}
+data("ny_noaa")
+ny_noaa
+```
+
+
+
 
