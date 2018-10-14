@@ -167,3 +167,23 @@ ggplot(avg_tmax_df, aes(x = year, y = avg_tmax, color = id)) +
   geom_line() + theme(legend.position = "none") + facet_wrap(~month, nrow = 2)
 ```
 
+```{r}
+avg_temp_year = weather_data %>%
+  filter(!is.na(tmax) & !is.na(tmin)) %>%
+  group_by(year) %>%
+  summarize(avg_tmax = mean(tmax), avg_tmin = mean(tmin)) %>%
+  gather(key = variable, value = value, 2:3)
+avg_temp_year
+
+ggplot(avg_temp_year, aes(x = year, y = value)) +
+  geom_line() + facet_wrap(~variable, nrow = 2, scales = "free_y") 
+
+snowfall_df = weather_data %>%
+  filter(snow > 0 & snow < 100) 
+  
+snowfall_df  
+
+ggplot(snowfall_df, aes(x = snow)) +
+  geom_histogram() + facet_wrap(~year)
+```
+
