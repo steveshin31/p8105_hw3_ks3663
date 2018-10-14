@@ -15,12 +15,68 @@ data("brfss_smart2010")
 
 filtered_brfss = brfss_smart2010 %>%
   janitor::clean_names() %>%
-  filter(topic == "Overall Health") 
+  filter(topic == "Overall Health") %>%
+  mutate(response_f = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"), ordered = TRUE))
 
+levels(filtered_brfss$response_f)
 filtered_brfss
+class(filtered_brfss$response_f)
+
+```
+```{r}
+
+filtered_brfss %>%
+  filter(year == "2002") %>%
+  select(locationabbr, locationdesc) %>%
+  distinct() %>%
+  group_by(locationabbr) %>%
+  summarize(count = n()) %>%
+  filter(count == 7)
+# CT, FL, and NC
+
+spaghetti_data = filtered_brfss %>%
+  select(year, locationabbr, locationdesc) %>%
+  distinct() %>%
+  group_by(year, locationabbr) %>%
+  summarize(count = n())
+spaghetti_data
+
+ggplot(spaghetti_data, aes(x = year, y = count, color = locationabbr)) + 
+  geom_line()
+
+```
+```{r}
+
+filtered_brfss %>%
+  filter(locationabbr == "NY", year %in% c(2002, 2006, 2010)) %>%
+  select(locationabbr, locationdesc, year, response_f, sample_size) %>%
+  spread(response_f, value = sample_size) %>%
+  mutate(proportion_ex = Excellent / (Excellent + `Very good` + Good + Fair + Poor)) %>%
+  group_by(year) %>%
+  summarize(mean = mean(proportion_ex), std = sd(proportion_ex)) 
+  
 
 ```
 
+```{r}
+
+average_data = filtered_brfss %>%
+  select(locationabbr, locationdesc, year, response_f, sample_size) %>%
+  spread(response_f, value = sample_size) %>%
+  mutate(total_sample = (Excellent + `Very good` + Good + Fair + Poor)) %>%
+  mutate(proportion_ex = Excellent / total_sample, proportion_vg = `Very good` / total_sample, proportion_g = Good / total_sample, proportion_f = Fair / total_sample, proportion_p = Poor / total_sample) %>%
+  group_by(year, locationabbr) %>%
+  summarize(mean_ex = mean(proportion_ex), mean_vg = mean(proportion_vg), mean_g = mean(proportion_g), mean_f = mean(proportion_f), mean_p = mean(proportion_p)) %>%
+  ungroup() %>%
+  gather(key = variable, value = value, 3:7)
+
+average_data
+
+ggplot(average_data, aes(x = year, y = value, color = locationabbr)) + 
+  geom_line() + facet_wrap(~variable)
+
+
+```
 
 ## Problem 2
 ```{r}
@@ -57,23 +113,25 @@ aisle_data
 ggplot(aisle_data, aes(x = aisle_id, y = n)) + geom_point()
 
 
- 
-filter(cart_data, aisle == "dog food care" & aisle == "baking ingredients")
+instacart %>%
+  filter(aisle %in% c("dog food care", "baking ingredients", "packaged vegetables fruits")) %>%
+  group_by(product_name, aisle) %>%
+  summarize(count = n()) %>%
+  ungroup() %>%
+  group_by(aisle) %>%
+  arrange(desc(count)) %>%
+  slice(1)
+
 
 ```
-
-## Problem 3
 ```{r}
-data("ny_noaa")
-ny_noaa
 
-weather_data = ny_noaa %>%
-  janitor::clean_names() %>%
-  separate(date, into = c("year", "month", "day"))
-weather_data
+instacart %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>%
+  summarize(mean_hour = mean(order_hour_of_day)) %>%
+  spread(order_dow, mean_hour)
 
 ```
-
-
 
 
