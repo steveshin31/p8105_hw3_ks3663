@@ -30,6 +30,9 @@ data("instacart")
 cart_data = instacart
 
 cart_data
+
+
+
 dim(cart_data)
 ```
 There are 
@@ -44,12 +47,31 @@ instacart %>%
   arrange(-n) # puts the aisle id in order from most ordered to least
 # Most items are ordered from aisle 83 and aisle 24. 
 
+
+aisle_data = instacart %>%
+  group_by(aisle_id) %>% # group by aisle id
+  summarize(n = n())  # take count of number of times ordered 
+  
+aisle_data
+
+ggplot(aisle_data, aes(x = aisle_id, y = n)) + geom_point()
+
+
+ 
+filter(cart_data, aisle == "dog food care" & aisle == "baking ingredients")
+
 ```
 
 ## Problem 3
 ```{r}
 data("ny_noaa")
 ny_noaa
+
+weather_data = ny_noaa %>%
+  janitor::clean_names() %>%
+  separate(date, into = c("year", "month", "day"))
+weather_data
+
 ```
 
 
