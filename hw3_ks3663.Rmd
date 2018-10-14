@@ -135,3 +135,24 @@ instacart %>%
 ```
 
 
+## Problem 3
+```{r}
+data("ny_noaa")
+ny_noaa
+
+weather_data = ny_noaa %>%
+  janitor::clean_names() %>%
+  mutate(tmax = as.numeric(tmax), tmin = as.numeric(tmin)) %>%
+  separate(date, into = c("year", "month", "day")) %>%
+  mutate(year = as.numeric(year), month = as.numeric(month), day = as.numeric(day)) %>%
+  mutate(prcp = prcp * 0.0393701, snow = snow * 0.0393701, snwd = snwd * 0.0393701, tmax = tmax / 10, tmin = tmin / 10) 
+weather_data
+
+ggplot(weather_data, aes(x = snow)) + 
+  geom_histogram(na.rm = T, binwidth = 1) +
+  coord_cartesian(xlim = c(0,25)) # snows a lot of the times but rarely a large amount
+
+summary(weather_data$tmax)
+weather_data
+```
+
