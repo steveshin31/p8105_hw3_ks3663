@@ -155,4 +155,15 @@ ggplot(weather_data, aes(x = snow)) +
 summary(weather_data$tmax)
 weather_data
 ```
+```{r}
+
+avg_tmax_df = weather_data %>%
+  filter(month %in% c(1, 7), !is.na(tmax)) %>%
+  group_by(id, year, month) %>%
+  summarize(avg_tmax = mean(tmax)) 
+  
+
+ggplot(avg_tmax_df, aes(x = year, y = avg_tmax, color = id)) +
+  geom_line() + theme(legend.position = "none") + facet_wrap(~month, nrow = 2)
+```
 
