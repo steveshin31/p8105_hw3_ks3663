@@ -40,15 +40,17 @@ locations_count = filtered_brfss %>%
   select(year, locationabbr, locationdesc) %>%
   distinct() %>% # distinct states
   group_by(year, locationabbr) %>%
-  summarize(count = n()) # count number of locations
+  summarize(count = n()) %>% # count number of locations
+  arrange(-count)
 locations_count
 
 ggplot(locations_count, aes(x = year, y = count, color = locationabbr)) + 
   geom_line()
 
 
-
 ```
+As can be seen by the data, most of the states were observed at fewer than 10 locations. Some outliers do exist: Florida had 44 and 41 locations observed in 2007 and 2010, respectively, which is much higher than the other states.
+
 ```{r}
 
 filtered_brfss %>%
@@ -58,16 +60,8 @@ filtered_brfss %>%
   group_by(year) %>%
   summarize(mean = mean(data_value), std = sd(data_value)) # show mean and std
 
-
-filtered_brfss %>%
-  filter(locationabbr == "NY", year %in% c(2002, 2006, 2010)) %>%
-  select(locationabbr, locationdesc, year, response_f, sample_size) %>%
-  spread(response_f, value = sample_size) %>%
-  mutate(proportion_ex = Excellent / (Excellent + `Very good` + Good + Fair + Poor)) %>%
-  group_by(year) %>%
-  summarize(mean = mean(proportion_ex), std = sd(proportion_ex)) 
 ```
-
+The averag proportion of excellent responses in NY State was highest in 2002 with around 24%. The average proportions were similar in 2006 and 2010. The standard deviation of the proportions was also highest in 2002. 
 ```{r}
 
 average_proportions = filtered_brfss %>%
@@ -83,7 +77,7 @@ average_proportions = filtered_brfss %>%
   arrange(factor_variable)
 
   
-average_proportions
+
 
 
 ggplot(average_proportions, aes(x = year, y = value, group = year)) + geom_boxplot() + facet_wrap(~variable) 
@@ -151,6 +145,8 @@ data("ny_noaa")
 ny_noaa
 dim(ny_noaa)
 summary(ny_noaa$tmax)
+
+  
 ```
 The data set is quite large with over 2 million observations. However there are a lot of missing values which is due to the fact that many stations only report precipitation. 
 ```{r}
