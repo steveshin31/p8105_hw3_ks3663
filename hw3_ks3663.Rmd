@@ -178,7 +178,7 @@ avg_tmax_df
 ggplot(avg_tmax_df, aes(x = year, y = avg_tmax, color = id)) +
   geom_line() + theme(legend.position = "none") + facet_wrap(~month, nrow = 2)
 ```
-
+As is expected, the average max temperature across the years is much lower during January than it is during July. The average tmax during January seem more erratic with more up and down spikes than that of July. Furthermore, when looking at January plot, there appears to be an overall upward trend, though very slight; more average tmax values can be found to be above 0 degrees Celsius in the later years. In terms of outliers, there is one location that experienced a much lower average tmax (about 13 degrees Celsius) in July around 1987. 
 ```{r}
 avg_temp_year = weather_data %>%
   filter(!is.na(tmax) & !is.na(tmin)) %>%
