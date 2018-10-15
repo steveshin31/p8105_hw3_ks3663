@@ -11,6 +11,7 @@ output: github_document
 library(tidyverse)
 library(p8105.datasets)
 
+
 data("brfss_smart2010") # import data
 
 filtered_brfss = brfss_smart2010 %>%
@@ -75,17 +76,17 @@ average_proportions = filtered_brfss %>%
   mutate(total_sample = (Excellent + `Very good` + Good + Fair + Poor)) %>%
   mutate(proportion_ex = Excellent / total_sample, proportion_vg = `Very good` / total_sample, proportion_g = Good / total_sample, proportion_f = Fair / total_sample, proportion_p = Poor / total_sample) %>% # create column for averages
   group_by(year, locationabbr) %>% # group by year and location
-  summarize(mean_ex = mean(proportion_ex), mean_vg = mean(proportion_vg), mean_g = mean(proportion_g), mean_f = mean(proportion_f), mean_p = mean(proportion_p)) %>%
+  summarize(Excellent = mean(proportion_ex), `Very good` = mean(proportion_vg), Good = mean(proportion_g), Fair = mean(proportion_f), Poor = mean(proportion_p)) %>%
   ungroup() %>%
-  gather(key = variable, value = value, 3:7) # reorder dataset 
+  gather(key = variable, value = value, 3:7) %>% # reorder dataset 
+  mutate(factor_variable = factor(variable, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"), ordered = TRUE)) %>% 
+  arrange(factor_variable)
 
+  
 average_proportions
 
 
-ggplot(average_proportions, aes(x = year, y = value, color = locationabbr)) + 
-  geom_line() + facet_wrap(~variable) # create plot of the averages 
-
-
+ggplot(average_proportions, aes(x = year, y = value, group = year)) + geom_boxplot() + facet_wrap(~variable) 
 ```
 
 ## Problem 2
@@ -95,30 +96,30 @@ data("instacart") # import data
 
 instacart
 
-dim(instacart)
 ```
-There are 
+There are `r nrow(distinct(instacart, order_id))` orders in this dataset and a total of `r nrow(distinct(instacart, product_id))` products ordered. The average hour of the day at which people buy the products is `r mean(instacart$order_hour_of_day)`, which shows many people shot during the evening hours. 
 ```{r}
 
 distinct(instacart, aisle_id) 
 # There are 134 different aisles. 
 
-instacart %>%
-  group_by(aisle_id) %>% # group by aisle id
-  summarize(n = n()) %>% # take count of number of times ordered 
-  arrange(-n) # puts the aisle id in order from most ordered to least
-# Most items are ordered from aisle 83 and aisle 24. 
-
-
 aisle_orders = instacart %>%
-  group_by(aisle_id) %>% # group by aisle id
-  summarize(n = n())  # take count of number of times ordered 
-  
+  group_by(aisle) %>%
+  summarize(n = n()) %>%
+  arrange(-n)
+# The most items are ordered from fresh vegetables and fresh fruits. 
+
 aisle_orders
 
-ggplot(aisle_orders, aes(x = aisle_id, y = n)) + geom_point()
+aisle_orders$aisle = factor(aisle_orders$aisle, levels =
+                              aisle_orders$aisle[order(aisle_orders$n)]) 
+
+ggplot(aisle_orders, aes(x = aisle, y = n)) + 
+  geom_point() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) # make plot of counts and put it in sensible order
 
 ```
+The plot shows that the number of items ordered from the aisles are mostly less than 25000. There are some outliers such as the two aisles that had above 150,000 orders (fresh fruits and fresh vegetables). 
 ```{r}
 
 instacart %>%
@@ -149,8 +150,9 @@ The average time at which people buy these products seem to be around earlier in
 data("ny_noaa")
 ny_noaa
 dim(ny_noaa)
+summary(ny_noaa$tmax)
 ```
-The data set is quite large with over 2 million observations. As 
+The data set is quite large with over 2 million observations. However there are a lot of missing values which is due to the fact that many stations only report precipitation. 
 ```{r}
 weather_data = ny_noaa %>%
   janitor::clean_names() %>%
@@ -158,17 +160,18 @@ weather_data = ny_noaa %>%
   separate(date, into = c("year", "month", "day")) %>%
   mutate(year = as.numeric(year), month = as.numeric(month), 
          day = as.numeric(day)) %>% # make date into three separate columns 
-  mutate(prcp = prcp * 0.0393701, snow = snow * 0.0393701, 
+  mutate(prcp = (prcp / 10) * 0.0393701, snow = snow * 0.0393701, 
          snwd = snwd * 0.0393701, tmax = tmax / 10, 
          tmin = tmin / 10) # convert data into inches 
 weather_data
 
-ggplot(weather_data, aes(x = snow)) + 
-  geom_histogram(na.rm = T, binwidth = 1) +
-  coord_cartesian(xlim = c(0,25)) 
- 
+weather_data %>%
+  group_by(snow) %>% 
+  summarize(count = n()) %>%
+  arrange(desc(count))
+  
 ```
-The most commonly observed values are small numbers close to 0. This is because it does not snow majority of the year therefore there are many recorded 0 inch values. And when it snows, it is not usually a large amount of inches. 
+The most commonly observed value is 0. This makes sense because it does not snow majority of the year therefore there are many recorded 0 inch values. There are many NA's since many stations do not record snowfall. 
 ```{r}
 
 avg_tmax_df = weather_data %>%
@@ -189,15 +192,29 @@ avg_temp_year = weather_data %>%
   gather(key = variable, value = value, 2:3)
 avg_temp_year
 
+
 ggplot(avg_temp_year, aes(x = year, y = value)) +
   geom_line() + facet_wrap(~variable, nrow = 2, scales = "free_y") 
 
+avg_temp_year = weather_data %>%
+  filter(!is.na(tmax) & !is.na(tmin)) %>%
+  group_by(year)
+avg_temp_year
+
+ggplot(avg_temp_year, aes(x = tmax, y = tmin)) + geom_hex()
+
+
+```
+When looking at the distribtion of tmax and tmin values, we can see there is a general pattern: higher tmax values is usually associated with higher tmin values.
+```{r}
 snowfall_df = weather_data %>%
-  filter(snow > 0 & snow < 100) # filter for 0 < snow < 100
+  filter(snow > 0 & snow < 100) # filter for 0 < snow < 100 inches
   
 snowfall_df  
 
 ggplot(snowfall_df, aes(x = snow)) +
   geom_histogram() + facet_wrap(~year) # separate graphs for each year 
+
 ```
+
 It can be seen that the number of snow occurrences steadily increased over the years. The amount of snow in inches however seems to have stayed about the same through the years. 
