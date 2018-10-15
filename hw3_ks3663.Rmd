@@ -131,7 +131,7 @@ instacart %>%
   slice(1) # show most ordered item 
 
 ```
-
+Light brown sugar, snack sticks chicken dog treats, and organic baby spinach were the three most popular items for aisles baking ingredients, dog food care, and packaged vegetables fruits, respectively. The count for the orders is the smallest for the dog treats, which would make sense because the population of people that would buy these treats is generally smaller than those that buy general food products.
 ```{r}
 
 instacart %>%
@@ -142,13 +142,16 @@ instacart %>%
 
 
 ```
-
+The average time at which people buy these products seem to be around earlier in the day to the evening. 
 
 ## Problem 3
 ```{r}
 data("ny_noaa")
 ny_noaa
-
+dim(ny_noaa)
+```
+The data set is quite large with over 2 million observations. As 
+```{r}
 weather_data = ny_noaa %>%
   janitor::clean_names() %>%
   mutate(tmax = as.numeric(tmax), tmin = as.numeric(tmin)) %>%
@@ -163,10 +166,9 @@ weather_data
 ggplot(weather_data, aes(x = snow)) + 
   geom_histogram(na.rm = T, binwidth = 1) +
   coord_cartesian(xlim = c(0,25)) 
-# The most commonly observed values are small numbers close to 0. This is because 
-# when it snows, it only snows a little amount. 
-
+ 
 ```
+The most commonly observed values are small numbers close to 0. This is because it does not snow majority of the year therefore there are many recorded 0 inch values. And when it snows, it is not usually a large amount of inches. 
 ```{r}
 
 avg_tmax_df = weather_data %>%
@@ -198,4 +200,4 @@ snowfall_df
 ggplot(snowfall_df, aes(x = snow)) +
   geom_histogram() + facet_wrap(~year) # separate graphs for each year 
 ```
-
+It can be seen that the number of snow occurrences steadily increased over the years. The amount of snow in inches however seems to have stayed about the same through the years. 
