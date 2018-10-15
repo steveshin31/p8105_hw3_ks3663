@@ -11,16 +11,17 @@ output: github_document
 library(tidyverse)
 library(p8105.datasets)
 
-data("brfss_smart2010") 
+data("brfss_smart2010") # import data
 
 filtered_brfss = brfss_smart2010 %>%
   janitor::clean_names() %>%
-  filter(topic == "Overall Health") %>%
-  mutate(response_f = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"), ordered = TRUE))
+  select(year, locationabbr, locationdesc, topic, response, sample_size, data_value) %>%
+  filter(topic == "Overall Health") %>% # filter based on overall health
+  mutate(response_f = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"), ordered = TRUE)) # make column for factor variables 
 
 levels(filtered_brfss$response_f)
-filtered_brfss
 class(filtered_brfss$response_f)
+filtered_brfss
 
 ```
 ```{r}
@@ -32,20 +33,30 @@ filtered_brfss %>%
   group_by(locationabbr) %>%
   summarize(count = n()) %>%
   filter(count == 7)
-# CT, FL, and NC
+# CT, FL, and NC were observed at 7 locations
 
-spaghetti_data = filtered_brfss %>%
+locations_count = filtered_brfss %>%
   select(year, locationabbr, locationdesc) %>%
-  distinct() %>%
+  distinct() %>% # distinct states
   group_by(year, locationabbr) %>%
-  summarize(count = n())
-spaghetti_data
+  summarize(count = n()) # count number of locations
+locations_count
 
-ggplot(spaghetti_data, aes(x = year, y = count, color = locationabbr)) + 
+ggplot(locations_count, aes(x = year, y = count, color = locationabbr)) + 
   geom_line()
+
+
 
 ```
 ```{r}
+
+filtered_brfss %>%
+  select(locationabbr, locationdesc, year, data_value, response) %>%
+  filter(locationabbr == "NY", year %in% c(2002, 2006, 2010), 
+         response == "Excellent") %>%
+  group_by(year) %>%
+  summarize(mean = mean(data_value), std = sd(data_value)) # show mean and std
+
 
 filtered_brfss %>%
   filter(locationabbr == "NY", year %in% c(2002, 2006, 2010)) %>%
@@ -54,26 +65,25 @@ filtered_brfss %>%
   mutate(proportion_ex = Excellent / (Excellent + `Very good` + Good + Fair + Poor)) %>%
   group_by(year) %>%
   summarize(mean = mean(proportion_ex), std = sd(proportion_ex)) 
-  
-
 ```
 
 ```{r}
 
-average_data = filtered_brfss %>%
+average_proportions = filtered_brfss %>%
   select(locationabbr, locationdesc, year, response_f, sample_size) %>%
   spread(response_f, value = sample_size) %>%
   mutate(total_sample = (Excellent + `Very good` + Good + Fair + Poor)) %>%
-  mutate(proportion_ex = Excellent / total_sample, proportion_vg = `Very good` / total_sample, proportion_g = Good / total_sample, proportion_f = Fair / total_sample, proportion_p = Poor / total_sample) %>%
-  group_by(year, locationabbr) %>%
+  mutate(proportion_ex = Excellent / total_sample, proportion_vg = `Very good` / total_sample, proportion_g = Good / total_sample, proportion_f = Fair / total_sample, proportion_p = Poor / total_sample) %>% # create column for averages
+  group_by(year, locationabbr) %>% # group by year and location
   summarize(mean_ex = mean(proportion_ex), mean_vg = mean(proportion_vg), mean_g = mean(proportion_g), mean_f = mean(proportion_f), mean_p = mean(proportion_p)) %>%
   ungroup() %>%
-  gather(key = variable, value = value, 3:7)
+  gather(key = variable, value = value, 3:7) # reorder dataset 
 
-average_data
+average_proportions
 
-ggplot(average_data, aes(x = year, y = value, color = locationabbr)) + 
-  geom_line() + facet_wrap(~variable)
+
+ggplot(average_proportions, aes(x = year, y = value, color = locationabbr)) + 
+  geom_line() + facet_wrap(~variable) # create plot of the averages 
 
 
 ```
@@ -81,15 +91,11 @@ ggplot(average_data, aes(x = year, y = value, color = locationabbr)) +
 ## Problem 2
 ```{r}
 
-data("instacart")
+data("instacart") # import data
 
-cart_data = instacart
+instacart
 
-cart_data
-
-
-
-dim(cart_data)
+dim(instacart)
 ```
 There are 
 ```{r}
@@ -104,33 +110,36 @@ instacart %>%
 # Most items are ordered from aisle 83 and aisle 24. 
 
 
-aisle_data = instacart %>%
+aisle_orders = instacart %>%
   group_by(aisle_id) %>% # group by aisle id
   summarize(n = n())  # take count of number of times ordered 
   
-aisle_data
+aisle_orders
 
-ggplot(aisle_data, aes(x = aisle_id, y = n)) + geom_point()
-
-
-instacart %>%
-  filter(aisle %in% c("dog food care", "baking ingredients", "packaged vegetables fruits")) %>%
-  group_by(product_name, aisle) %>%
-  summarize(count = n()) %>%
-  ungroup() %>%
-  group_by(aisle) %>%
-  arrange(desc(count)) %>%
-  slice(1)
-
+ggplot(aisle_orders, aes(x = aisle_id, y = n)) + geom_point()
 
 ```
 ```{r}
 
 instacart %>%
-  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  filter(aisle %in% c("dog food care", "baking ingredients", "packaged vegetables fruits")) %>% # filter by selected aisles 
+  group_by(product_name, aisle) %>%
+  summarize(count = n()) %>% # take count 
+  ungroup() %>%
+  group_by(aisle) %>%
+  arrange(desc(count)) %>% # arrange count in descending order 
+  slice(1) # show most ordered item 
+
+```
+
+```{r}
+
+instacart %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
   group_by(product_name, order_dow) %>%
-  summarize(mean_hour = mean(order_hour_of_day)) %>%
-  spread(order_dow, mean_hour)
+  summarize(mean_hour = mean(order_hour_of_day)) %>% # calculate mean 
+  spread(order_dow, mean_hour) # spread days into columns 
+
 
 ```
 
@@ -144,24 +153,27 @@ weather_data = ny_noaa %>%
   janitor::clean_names() %>%
   mutate(tmax = as.numeric(tmax), tmin = as.numeric(tmin)) %>%
   separate(date, into = c("year", "month", "day")) %>%
-  mutate(year = as.numeric(year), month = as.numeric(month), day = as.numeric(day)) %>%
-  mutate(prcp = prcp * 0.0393701, snow = snow * 0.0393701, snwd = snwd * 0.0393701, tmax = tmax / 10, tmin = tmin / 10) 
+  mutate(year = as.numeric(year), month = as.numeric(month), 
+         day = as.numeric(day)) %>% # make date into three separate columns 
+  mutate(prcp = prcp * 0.0393701, snow = snow * 0.0393701, 
+         snwd = snwd * 0.0393701, tmax = tmax / 10, 
+         tmin = tmin / 10) # convert data into inches 
 weather_data
 
 ggplot(weather_data, aes(x = snow)) + 
   geom_histogram(na.rm = T, binwidth = 1) +
-  coord_cartesian(xlim = c(0,25)) # snows a lot of the times but rarely a large amount
+  coord_cartesian(xlim = c(0,25)) 
+# The most commonly observed values are small numbers close to 0. This is because 
+# when it snows, it only snows a little amount. 
 
-summary(weather_data$tmax)
-weather_data
 ```
 ```{r}
 
 avg_tmax_df = weather_data %>%
-  filter(month %in% c(1, 7), !is.na(tmax)) %>%
-  group_by(id, year, month) %>%
-  summarize(avg_tmax = mean(tmax)) 
-  
+  filter(month %in% c(1, 7), !is.na(tmax)) %>% # filter by month and exclude NA's 
+  group_by(id, year, month) %>%  
+  summarize(avg_tmax = mean(tmax)) # calculate averages 
+avg_tmax_df  
 
 ggplot(avg_tmax_df, aes(x = year, y = avg_tmax, color = id)) +
   geom_line() + theme(legend.position = "none") + facet_wrap(~month, nrow = 2)
@@ -179,11 +191,11 @@ ggplot(avg_temp_year, aes(x = year, y = value)) +
   geom_line() + facet_wrap(~variable, nrow = 2, scales = "free_y") 
 
 snowfall_df = weather_data %>%
-  filter(snow > 0 & snow < 100) 
+  filter(snow > 0 & snow < 100) # filter for 0 < snow < 100
   
 snowfall_df  
 
 ggplot(snowfall_df, aes(x = snow)) +
-  geom_histogram() + facet_wrap(~year)
+  geom_histogram() + facet_wrap(~year) # separate graphs for each year 
 ```
 
