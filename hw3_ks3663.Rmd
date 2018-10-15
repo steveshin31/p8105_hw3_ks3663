@@ -63,25 +63,27 @@ filtered_brfss %>%
 ```
 The averag proportion of excellent responses in NY State was highest in 2002 with around 24%. The average proportions were similar in 2006 and 2010. The standard deviation of the proportions was also highest in 2002. 
 ```{r}
-
-average_proportions = filtered_brfss %>%
-  select(locationabbr, locationdesc, year, response_f, sample_size) %>%
-  spread(response_f, value = sample_size) %>%
-  mutate(total_sample = (Excellent + `Very good` + Good + Fair + Poor)) %>%
-  mutate(proportion_ex = Excellent / total_sample, proportion_vg = `Very good` / total_sample, proportion_g = Good / total_sample, proportion_f = Fair / total_sample, proportion_p = Poor / total_sample) %>% # create column for averages
-  group_by(year, locationabbr) %>% # group by year and location
-  summarize(Excellent = mean(proportion_ex), `Very good` = mean(proportion_vg), Good = mean(proportion_g), Fair = mean(proportion_f), Poor = mean(proportion_p)) %>%
-  ungroup() %>%
-  gather(key = variable, value = value, 3:7) %>% # reorder dataset 
-  mutate(factor_variable = factor(variable, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"), ordered = TRUE)) %>% 
-  arrange(factor_variable)
-
   
+average_proportions = filtered_brfss %>% 
+  select(locationabbr, locationdesc, year, response_f, data_value) %>% 
+  group_by(year, locationdesc, response_f) %>% 
+  spread(response_f, value = data_value) %>% 
+  summarize(
+    Excellent = mean(Excellent), `Very Good` = mean(`Very good`), 
+    Good = mean(Good), Fair = mean(Fair), 
+    Poor = mean(Poor)) %>% # calculate averages
+  ungroup() %>% 
+  gather(key = variable, value = value, 3:7)
+average_proportions
 
+average_proportions$response_f =
+  factor(average_proportions$variable, 
+         levels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
 
-
-ggplot(average_proportions, aes(x = year, y = value, group = year)) + geom_boxplot() + facet_wrap(~variable) 
+ggplot(average_proportions, aes(x = year, y = value, group = year)) + geom_boxplot() + facet_wrap(~response_f) 
 ```
+Overall, the average value of proportions of "Very Good" were the highest, while that of the "Poor" response was lowest. The "Poor" response had the lowest spread. Since most people responded with "Excellent", "Very Good", and "Good", their respective spreads were much bigger than that of "Fair" and "Poor", which less people responded with. 
+
 
 ## Problem 2
 ```{r}
